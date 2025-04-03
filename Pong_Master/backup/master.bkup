@@ -1,0 +1,285 @@
+#include <Wire.h>
+#include <WiFi.h>
+#include <WebSocketsServer.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "BARN WIFI";
+const char* password = "512939692b";
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+#define DIRECTION_PIN_1 18
+#define STEP_PIN_1 19
+#define DIRECTION_PIN_2 32
+#define STEP_PIN_2 33
+#define DIRECTION_PIN_3 23
+#define STEP_PIN_3 25
+#define SOLENOID_PIN 26
+#define ONBOARD_LED 2
+#define LIMIT_SWITCH_1 34
+#define LIMIT_SWITCH_2 35
+#define ENABLE_PIN 27
+#define I2C_DEV_ADDR 0x55
+
+int speedLevel = 3;
+int stepSize = 1;
+bool moveX = false, moveY = false, moveZ = false;
+int directionX = 1, directionY = 1, directionZ = 1;
+bool isMoving = false;
+bool throwInProgress = false;
+bool solenoidActivated = false;
+bool homeSwitch1Triggered = false;
+bool homeSwitch2Triggered = false;
+bool homeSwitch3Triggered = false;
+
+const int predefinedStepSizes[] = {1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+const int numPredefinedStepSizes = sizeof(predefinedStepSizes) / sizeof(predefinedStepSizes[0]);
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
+void handleWebSocketMessage(uint8_t num, uint8_t * payload);
+void stepMotor(int motor, int direction, int steps, int speed);
+void stopMotors();
+void flashLED(int ledPin);
+void throwRoutine();
+void testSolenoid();
+void sendLog(uint8_t num);
+void sendWebSocketLog(const char* message);
+
+void setup() {
+  pinMode(ONBOARD_LED, OUTPUT);
+  pinMode(SOLENOID_PIN, OUTPUT);
+  pinMode(ENABLE_PIN, OUTPUT);
+  digitalWrite(ONBOARD_LED, HIGH);
+  digitalWrite(SOLENOID_PIN, LOW);
+  digitalWrite(ENABLE_PIN, LOW);
+  Serial.begin(115200);
+  pinMode(DIRECTION_PIN_1, OUTPUT);
+  pinMode(STEP_PIN_1, OUTPUT);
+  pinMode(DIRECTION_PIN_2, OUTPUT);
+  pinMode(STEP_PIN_2, OUTPUT);
+  pinMode(DIRECTION_PIN_3, OUTPUT);
+  pinMode(STEP_PIN_3, OUTPUT);
+  pinMode(LIMIT_SWITCH_1, INPUT_PULLUP);
+  pinMode(LIMIT_SWITCH_2, INPUT_PULLUP);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    digitalWrite(ONBOARD_LED, LOW);
+    delay(200);
+    digitalWrite(ONBOARD_LED, HIGH);
+    delay(200);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi Connected!");
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
+  Wire.begin();
+  Wire.beginTransmission(I2C_DEV_ADDR);
+  int error = Wire.endTransmission();
+  if (error == 0) {
+    Serial.println("I2C communication test passed");
+  } else {
+    Serial.print("I2C communication test failed with error: ");
+    Serial.println(error);
+  }
+}
+
+void loop() {
+  webSocket.loop();
+  if (!isMoving) {
+    if (moveX) {
+      isMoving = true;
+      stepMotor(1, directionX, stepSize, speedLevel);
+      moveX = false;
+      flashLED(ONBOARD_LED);
+      isMoving = false;
+    }
+    if (moveY) {
+      isMoving = true;
+      stepMotor(2, directionY, stepSize, speedLevel);
+      moveY = false;
+      flashLED(ONBOARD_LED);
+      isMoving = false;
+    }
+    if (moveZ) {
+      isMoving = true;
+      stepMotor(3, directionZ, stepSize, speedLevel);
+      moveZ = false;
+      flashLED(ONBOARD_LED);
+      isMoving = false;
+    }
+  }
+  if (throwInProgress) {
+    throwRoutine();
+    throwInProgress = false;
+  }
+  if (solenoidActivated) {
+    testSolenoid();
+    solenoidActivated = false;
+  }
+  delay(10 * (11 - speedLevel));
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] Disconnected!\n", num);
+      break;
+    case WStype_CONNECTED:
+      {
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        flashLED(ONBOARD_LED);
+      }
+      break;
+    case WStype_TEXT:
+      Serial.printf("[%u] get Text: %s\n", num, payload);
+      handleWebSocketMessage(num, payload);
+      break;
+    case WStype_ERROR:
+    case WStype_BIN:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+    case WStype_PING:
+    case WStype_PONG:
+      break;
+  }
+}
+
+void handleWebSocketMessage(uint8_t num, uint8_t * payload) {
+  Serial.println("Received JSON: " + String((char *)payload));
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, payload);
+  if (error) {
+    Serial.println("JSON Parsing Failed!");
+    return;
+  }
+  if (doc["X"].is<int>()) {
+    int value = doc["X"].as<int>();
+    directionX = (value > 0) ? 1 : -1;
+    moveX = (value != 0);
+  }
+  if (doc["Y"].is<int>()) {
+    int value = doc["Y"].as<int>();
+    directionY = (value > 0) ? 1 : -1;
+    moveY = (value != 0);
+  }
+  if (doc["Z"].is<int>()) {
+    int value = doc["Z"].as<int>();
+    directionZ = (value > 0) ? 1 : -1;
+    moveZ = (value != 0);
+  }
+  if (doc["P"].is<int>()) {
+    speedLevel = constrain(doc["P"].as<int>(), 1, 10);
+  }
+  if (doc["STEPS"].is<int>()) {
+    stepSize = doc["STEPS"].as<int>();
+  }
+  if (doc["THROW"].is<bool>() && doc["THROW"].as<bool>()) {
+    throwInProgress = true;
+  }
+  if (doc["TEST_SOLENOID"].is<bool>() && doc["TEST_SOLENOID"].as<bool>()) {
+    solenoidActivated = true;
+  }
+  flashLED(ONBOARD_LED);
+  sendLog(num);
+}
+
+void flashLED(int ledPin) {
+  digitalWrite(ledPin, LOW);
+  delay(100);
+  digitalWrite(ledPin, HIGH);
+}
+
+void stepMotor(int motor, int direction, int steps, int speed) {
+  int delayTime = map(speed, 1, 10, 1000, 100);
+  if (motor == 1) {
+    digitalWrite(DIRECTION_PIN_1, direction == 1 ? HIGH : LOW);
+    for (int i = 0; i < steps; i++) {
+      digitalWrite(STEP_PIN_1, HIGH);
+      delayMicroseconds(delayTime);
+      digitalWrite(STEP_PIN_1, LOW);
+      delayMicroseconds(delayTime);
+    }
+  } else if (motor == 2) {
+    digitalWrite(DIRECTION_PIN_2, direction == 1 ? HIGH : LOW);
+    for (int i = 0; i < steps; i++) {
+      digitalWrite(STEP_PIN_2, HIGH);
+      delayMicroseconds(delayTime);
+      digitalWrite(STEP_PIN_2, LOW);
+      delayMicroseconds(delayTime);
+    }
+  } else if (motor == 3) {
+    digitalWrite(DIRECTION_PIN_3, direction == 1 ? HIGH : LOW);
+    for (int i = 0; i < steps; i++) {
+      digitalWrite(STEP_PIN_3, HIGH);
+      delayMicroseconds(delayTime);
+      digitalWrite(STEP_PIN_3, LOW);
+      delayMicroseconds(delayTime);
+    }
+  }
+}
+
+void stopMotors() {
+  moveX = moveY = moveZ = false;
+}
+
+void throwRoutine() {
+  sendWebSocketLog("Starting throw routine...");
+  stepMotor(1, directionZ, 500, speedLevel);
+  sendWebSocketLog("Motor moved 500 steps forward.");
+  digitalWrite(SOLENOID_PIN, HIGH);
+  sendWebSocketLog("Solenoid activated.");
+  delayMicroseconds(500);
+  digitalWrite(SOLENOID_PIN, LOW);
+  sendWebSocketLog("Solenoid deactivated.");
+  Wire.beginTransmission(I2C_DEV_ADDR);
+  Wire.write(speedLevel);
+  int error = Wire.endTransmission();
+  if (error == 0) {
+    Serial.println("I2C message sent successfully");
+  } else {
+    Serial.print("I2C error: ");
+    Serial.println(error);
+  }
+  sendWebSocketLog("Reversing motor direction...");
+  while (!homeSwitch2Triggered) {
+    stepMotor(1, -directionZ, 20, speedLevel);
+    if (digitalRead(LIMIT_SWITCH_2) == HIGH) {
+      homeSwitch2Triggered = true;
+      sendWebSocketLog("Home switch 2 triggered.");
+      break;
+    }
+  }
+  sendWebSocketLog("Throw routine completed.");
+}
+
+void testSolenoid() {
+  digitalWrite(SOLENOID_PIN, HIGH);
+  delay(1000);
+  digitalWrite(SOLENOID_PIN, LOW);
+}
+
+void sendLog(uint8_t num) {
+  JsonDocument doc;
+  doc["moveX"] = moveX;
+  doc["moveY"] = moveY;
+  doc["moveZ"] = moveZ;
+  doc["directionX"] = directionX;
+  doc["directionY"] = directionY;
+  doc["directionZ"] = directionZ;
+  doc["speedLevel"] = speedLevel;
+  doc["stepSize"] = stepSize;
+  doc["throwInProgress"] = throwInProgress;
+  doc["solenoidActivated"] = solenoidActivated;
+  doc["homeSwitch1Triggered"] = homeSwitch1Triggered;
+  doc["homeSwitch2Triggered"] = homeSwitch2Triggered;
+  doc["homeSwitch3Triggered"] = homeSwitch3Triggered;
+  String jsonString;
+  serializeJson(doc, jsonString);
+  webSocket.sendTXT(num, jsonString);
+}
+
+void sendWebSocketLog(const char* message) {
+  webSocket.broadcastTXT(message);
+}

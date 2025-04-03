@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pong 01 Controller</title>
+<style>
+</style>
+</head>
+<body>
+<div class="controls">
+  <h2>Pong 01 Controller</h2>
+  <p>Master Status: <span id="masterStatus" class="disconnected">Disconnected</span></p>
+  <p>Slave Status: <span id="slaveStatus" class="disconnected">Disconnected</span></p>
+  <h3>Movement Controls</h3>
+  <button onclick="sendCommand('X', 1)">Move Right</button>
+  <button onclick="sendCommand('X', -1)">Move Left</button><br>
+  <button onclick="sendCommand('Y', 1)">Move Up</button>
+  <button onclick="sendCommand('Y', -1)">Move Down</button><br>
+  <button onclick="sendCommand('Z', 1)">Move Forward</button>
+  <button onclick="sendCommand('Z', -1)">Move Backward</button>
+  <h3>Speed Control</h3>
+  <input type="range" id="speedSlider" min="1" max="10" value="3" oninput="updateSpeed(this.value)">
+  <p>Speed Level: <span id="speedValue">3</span></p>
+  <h3>Step Size Control</h3>
+  <select id="stepSizeSelect" onchange="updateStepSize(this.value)">
+    <option value="1">1</option>
+    <option value="100">100</option>
+    <option value="200">200</option>
+    <option value="300">300</option>
+    <option value="400">400</option>
+    <option value="500">500</option>
+    <option value="600">600</option>
+    <option value="700">700</option>
+    <option value="800">800</option>
+    <option value="900">900</option>
+    <option value="1000">1000</option>
+  </select>
+  <p>Step Size: <span id="stepSizeValue">1</span></p>
+  <h3>Throw Routine</h3>
+  <button onclick="sendCommand('THROW', true)">Throw</button>
+  <h3>Test Solenoid</h3>
+  <button onclick="sendCommand('TEST_SOLENOID', true)">Test Solenoid</button>
+  <h3>Home Axes</h3>
+  <button onclick="sendCommand('HOME_X', true)">Home X Axis</button>
+  <button onclick="sendCommand('HOME_Y', true)">Home Y Axis</button>
+  <button onclick="sendCommand('HOME_Z', true)">Home Z Axis</button>
+</div>
+<div class="log">
+  <h3>Log</h3>
+  <pre id="log"></pre>
+</div>
+<script>
+let masterWs;
+let slaveWs;
+const MASTER_IP = "ws://192.168.1.222:81"; // Replace with Master ESP32 IP
+const SLAVE_IP = "ws://192.168.1.224:81"; // Replace with Slave ESP32 IP
+
+function connectWebSocket(ws, ip, statusElement) {
+  ws = new WebSocket(ip);
+  ws.onopen = () => {
+    document.getElementById(statusElement).innerText = "Connected";
+    document.getElementById(statusElement).className = "connected";
+    console.log(`Connected to ${ip}`);
+  };
+  ws.onmessage = (event) => {
+    console.log(`Message from ${ip}:`, event.data);
+    displayLog(event.data);
+  };
+  ws.onclose = () => {
+    document.getElementById(statusElement).innerText = "Disconnected";
+    document.getElementById(statusElement).className = "disconnected";
+    console.log(`Disconnected from ${ip}`);
+    setTimeout(() => connectWebSocket(ws, ip, statusElement), 5000); // Attempt to reconnect after 5 seconds
+  };
+  ws.onerror = (error) => {
+    console.error(`WebSocket error for ${ip}:`, error);
+    // Do not show alert for errors, just log to console
+  };
+  return ws;
+}
+
+function sendCommand(command, value) {
+  if (masterWs && masterWs.readyState === WebSocket.OPEN) {
+    let jsonMsg = JSON.stringify({ [command]: value });
+    masterWs.send(jsonMsg);
+    console.log("Sent to Master:", jsonMsg);
+  } else {
+    console.error("Master WebSocket not connected!");
+  }
+}
+
+function updateSpeed(value) {
+  document.getElementById("speedValue").innerText = value;
+  sendCommand("P", parseInt(value));
+}
+
+function updateStepSize(value) {
+  const stepSize = parseInt(value);
+  document.getElementById("stepSizeValue").innerText = stepSize;
+  sendCommand("STEPS", stepSize);
+}
+
+function displayLog(data) {
+  const logElement = document.getElementById("log");
+  try {
+    const jsonData = JSON.parse(data);
+    logElement.innerText += JSON.stringify(jsonData, null, 2) + "\n";
+  } catch (e) {
+    logElement.innerText += data + "\n";
+  }
+}
+
+function clearLog() {
+  const logElement = document.getElementById("log");
+  logElement.innerText = "";
+}
+
+// Clear log on page load and attempt to connect to WebSocket servers
+window.onload = () => {
+  clearLog();
+  masterWs = connectWebSocket(masterWs, MASTER_IP, "masterStatus");
+  slaveWs = connectWebSocket(slaveWs, SLAVE_IP, "slaveStatus");
+};
+</script>
+</body>
+</html>

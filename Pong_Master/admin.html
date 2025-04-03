@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Control - Admin</title>
+    <link rel="stylesheet" href="admin_styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Motor Control - Admin</h1>
+        <div class="controls">
+            <div class="jogging">
+                <div class="axis">
+                    <button id="moveXForward" disabled>X+</button>
+                    <button id="moveXBackward" disabled>X-</button>
+                </div>
+                <div class="axis">
+                    <button id="moveYForward" disabled>Y+</button>
+                    <button id="moveYBackward" disabled>Y-</button>
+                </div>
+                <div class="axis">
+                    <button id="moveZForward" disabled>Z+</button>
+                    <button id="moveZBackward" disabled>Z-</button>
+                </div>
+            </div>
+            <button id="throwBall" class="round-button" disabled>Throw Ball</button>
+            <button id="testSolenoid" disabled>Test Solenoid</button>
+            <button id="homeX" disabled>Home X</button>
+            <button id="homeY" disabled>Home Y</button>
+            <button id="homeZ" disabled>Home Z</button>
+        </div>
+        <div class="slider-container">
+            <label for="powerLevel">Power Level:</label>
+            <input type="range" id="powerLevel" name="powerLevel" min="0" max="5000" value="2500">
+            <span id="powerLevelValue">2500</span>
+        </div>
+        <div class="slider-container">
+            <label for="stepSize">Step Size:</label>
+            <input type="range" id="stepSize" name="stepSize" min="1" max="1000" value="100">
+            <span id="stepSizeValue">100</span>
+        </div>
+        <div class="slider-container">
+            <label for="speedX">Speed X:</label>
+            <input type="range" id="speedX" name="speedX" min="200" max="2000" value="1000">
+            <span id="speedXValue">1000</span>
+        </div>
+        <div class="slider-container">
+            <label for="speedY">Speed Y:</label>
+            <input type="range" id="speedY" name="speedY" min="200" max="2000" value="2000">
+            <span id="speedYValue">2000</span>
+        </div>
+        <div class="slider-container">
+            <label for="speedZ">Speed Z:</label>
+            <input type="range" id="speedZ" name="speedZ" min="200" max="2000" value="220">
+            <span id="speedZValue">220</span>
+        </div>
+        <div class="slider-container">
+            <label for="ballLoadingSteps">Ball Loading Steps:</label>
+            <input type="range" id="ballLoadingSteps" name="ballLoadingSteps" min="1" max="5000" value="4200">
+            <span id="ballLoadingStepsValue">4200</span>
+        </div>
+        <div class="step-counts">
+            <div>Steps X: <span id="stepsX">0</span></div>
+            <div>Steps Y: <span id="stepsY">0</span></div>
+            <div>Steps Z: <span id="stepsZ">0</span></div>
+        </div>
+        <div class="logs">
+            <h2>Logs</h2>
+            <div class="log-box" id="logBox">
+                <ul id="logList"></ul>
+            </div>
+        </div>
+        <div class="live-stream">
+            <h2>Live Stream</h2>
+            <img id="webcamStream" src="http://192.168.1.229:4747/video" alt="Live Stream" width="640" height="480">
+        </div>
+    </div>
+    <script src="admin_script.js"></script>
+</body>
+</html>

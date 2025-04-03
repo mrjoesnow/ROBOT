@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Control</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Motor Control</h1>
+        <div class="controls">
+            <button id="moveXForward">Move X Forward</button>
+            <button id="moveXBackward">Move X Backward</button>
+            <button id="moveYForward">Move Y Forward</button>
+            <button id="moveYBackward">Move Y Backward</button>
+            <button id="moveZForward">Move Z Forward</button>
+            <button id="moveZBackward">Move Z Backward</button>
+            <button id="throwBall">Throw Ball</button>
+            <button id="testSolenoid">Test Solenoid</button>
+            <button id="homeX">Home X</button>
+            <button id="homeY">Home Y</button>
+            <button id="homeZ">Home Z</button>
+        </div>
+        <div class="slider-container">
+            <label for="powerLevel">Power Level:</label>
+            <input type="range" id="powerLevel" name="powerLevel" min="0" max="6000" value="1000">
+            <span id="powerLevelValue">1000</span>
+        </div>
+        <div class="logs">
+            <h2>Logs</h2>
+            <div class="log-box" id="logBox">
+                <ul id="logList"></ul>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
