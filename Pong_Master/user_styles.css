@@ -27,116 +27,75 @@ body {
     position: absolute;
 }
 
-.left-slider {
-    top: 50%;
-    left: -50px;
-    transform: rotate(-90deg);
-}
-
 .right-slider {
     top: 50%;
     right: -50px;
     transform: rotate(90deg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.bottom-slider {
-    bottom: -50px;
-    left: 50%;
-    transform: translateX(-50%);
+.right-slider input[type="range"] {
+    width: 300px;
+    height: 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #ddd;
+    outline: none;
+    border-radius: 5px;
+    transform: translatey(-50px) rotate(180deg);
+}
+
+.right-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.right-slider input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    cursor: pointer;
+    border-radius: 50%;
 }
 
 .control-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     margin-top: 20px;
+    width: 100%;
 }
 
-.stream-box {
-    width: 333px;
-    height: 250px;
-    margin: 10px;
+.control-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.stats {
-    margin: 20px;
+.control-table td {
+    vertical-align: top;
+    padding: 10px;
 }
 
-.control-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.arrow-buttons {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-gap: 5px; /* Reduced grid gap */
-}
-
-.arrow-buttons > div {
-    width: 40px;
-    height: 40px;
-}
-
-.arrow-button {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0; /* Removed margin */
-}
-
-.arrow-button.thin {
-    font-weight: normal;
-}
-
-.arrow-button.thick {
-    font-weight: bold;
-    font-size: 24px;
-}
-
-.arrow-button:hover {
-    background-color: #0056b3;
-}
-
-.throw-button {
-    width: 50px;
-    height: 50px;
-    font-size: 18px;
-    background-color: red;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    grid-column: 3;
-    grid-row: 3;
-    margin: 0; /* Removed margin */
-}
-
-.throw-button:hover {
-    background-color: darkred;
+.log-column {
+    width: 20%;
 }
 
 .home-buttons {
+    width: 20%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin-top: 20px;
+    align-items: flex-start;
 }
 
 .home-buttons button {
     width: 150px;
     height: 50px;
     font-size: 18px;
-    margin: 5px 0; /* Reduced vertical margin */
+    margin: 5px 0;
     background-color: #007bff;
     color: white;
     border: none;
@@ -148,11 +107,80 @@ body {
     background-color: #0056b3;
 }
 
+.stream-box {
+    width: 30%;
+    text-align: center;
+}
+
+.stats {
+    width: 30%;
+    text-align: left;
+}
+
+.control-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.arrow-buttons {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 5px;
+}
+
+.arrow-buttons > div {
+    width: 40px;
+    height: 40px;
+}
+
+.arrow-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+.arrow-button.small {
+    font-size: 24px;
+}
+
+.arrow-button.big {
+    font-size: 36px;
+}
+
+.arrow-button.massive {
+    font-size: 48px;
+}
+
+.arrow-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.throw-button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    margin: 0;
+}
+
+.throw-button:hover {
+    background-color: darkred;
+}
+
 #logBox {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    width: 300px;
+    width: 100%;
     height: 200px;
     overflow-y: auto;
     background-color: #fff;
@@ -170,3 +198,62 @@ body {
 #logList li {
     margin-bottom: 5px;
 }
+
+.arrow {
+    position: relative;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+}
+
+.arrow::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border-top: 2px solid #000;
+    border-right: 2px solid #000;
+    transform: translate(-50%, -50%);
+}
+
+.left-arrow::before {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.right-arrow::before {
+    transform: translate(-50%, -50%) rotate(135deg);
+}
+
+.x-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: bottom;
+    gap: 10px;
+    margin-bottom: 0px;
+    transform: translatey(-50px) rotate(90deg);
+}
+
+.y-buttons {
+    position: absolute;
+    bottom: 10px;
+    right: 70px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.y-buttons .arrow-button {
+    transform: rotate(0deg);
+}
+
+.y-buttons .left-arrow::before {
+    transform: translate(-50%, -50%) rotate(-135deg);
+}
+
+.y-buttons .right-arrow::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+

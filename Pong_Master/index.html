@@ -10,69 +10,53 @@
     <div class="container">
         <div class="stream-container">
             <img id="webcamStream" src="http://localhost:3000/stream1" alt="Live Stream" width="800" height="600">
-            <div class="slider left-slider">
-                <input type="range" id="angleX" name="angleX" min="-50" max="50" value="0">
-            </div>
             <div class="slider right-slider">
                 <input type="range" id="powerLevel" name="powerLevel" min="0" max="5000" value="2500">
+                <div class="x-buttons">
+                    <button id="moveXForwardSmall" class="arrow-button small"><div class="arrow left-arrow"></div></button>
+                    <button id="moveXForwardBig" class="arrow-button big"><div class="arrow left-arrow"></div></button>
+                    <button id="moveXForwardMassive" class="arrow-button massive"><div class="arrow left-arrow"></div></button>
+                    <button id="moveXBackwardSmall" class="arrow-button small"><div class="arrow right-arrow"></div></button>
+                    <button id="moveXBackwardBig" class="arrow-button big"><div class="arrow right-arrow"></div></button>
+                    <button id="moveXBackwardMassive" class="arrow-button massive"><div class="arrow right-arrow"></div></button>
+                </div>
             </div>
-            <div class="slider bottom-slider">
-                <input type="range" id="angleY" name="angleY" min="-50" max="50" value="0">
+            <div class="y-buttons">
+                <button id="moveYForwardSmall" class="arrow-button small"><div class="arrow left-arrow"></div></button>
+                <button id="moveYForwardBig" class="arrow-button big"><div class="arrow left-arrow"></div></button>
+                <button id="moveYForwardMassive" class="arrow-button massive"><div class="arrow left-arrow"></div></button>
+                <button id="moveYBackwardSmall" class="arrow-button small"><div class="arrow right-arrow"></div></button>
+                <button id="moveYBackwardBig" class="arrow-button big"><div class="arrow right-arrow"></div></button>
+                <button id="moveYBackwardMassive" class="arrow-button massive"><div class="arrow right-arrow"></div></button>
             </div>
+            <button id="throwBall" class="throw-button">O</button>
         </div>
         <div class="control-panel">
-            <div class="stream-box">
-                <img id="secondaryStream" src="http://localhost:3000/stream2" alt="Secondary Stream" width="333" height="250">
-            </div>
-            <div class="stats">
-                <div>Pan: <span id="tiltValue">0</span></div>
-                <div>Tilt: <span id="panValue">0</span></div>
-                <div>Power Level: <span id="powerLevelValue">2500</span></div>
-                <div>Balls Thrown: <span id="ballsThrownValue">0</span></div>
-            </div>
-            <div class="control-buttons">
-                <div class="arrow-buttons">
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-                    <button id="moveXForwardBig" class="arrow-button thick">&#9650;</button>
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-                    <button id="moveXForwardSmall" class="arrow-button thin">&#9650;</button>
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-
-                    <button id="moveYBackwardBig" class="arrow-button thick">&lt;</button>
-                    <button id="moveYBackwardSmall" class="arrow-button thin">&lt;</button>
-                    <button id="throwBall" class="throw-button">O</button>
-                    <button id="moveYForwardSmall" class="arrow-button thin">&gt;</button>
-                    <button id="moveYForwardBig" class="arrow-button thick">&gt;</button>
-
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-                    <button id="moveXBackwardSmall" class="arrow-button thin">&#9660;</button>
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-                    <button id="moveXBackwardBig" class="arrow-button thick">&#9660;</button>
-                    <div class="empty"></div>
-                    <div class="empty"></div>
-                </div>
-                <div class="home-buttons">
-                    <button id="homeX">Home X</button>
-                    <button id="homeY">Home Y</button>
-                    <button id="homeZ">Home Z</button>
-                    <button id="testSolenoid">Test Solenoid</button>
-                </div>
-            </div>
+            <table class="control-table">
+                <tr>
+                    <td class="log-column">
+                        <div id="logBox">
+                            <ul id="logList"></ul>
+                        </div>
+                    </td>
+                    <td class="home-buttons">
+                        <button id="homeX">Home X</button>
+                        <button id="homeY">Home Y</button>
+                        <button id="homeZ">Home Z</button>
+                        <button id="testSolenoid">Test Solenoid</button>
+                    </td>
+                    <td class="stream-box">
+                        <img id="secondaryStream" src="http://localhost:3000/stream2" alt="Secondary Stream" width="333" height="250">
+                    </td>
+                    <td class="stats">
+                        <div>Pan: <span id="tiltValue">0</span></div>
+                        <div>Tilt: <span id="panValue">0</span></div>
+                        <div>Power Level: <span id="powerLevelValue">2500</span></div>
+                        <div>Balls Thrown: <span id="ballsThrownValue">0</span></div>
+                    </td>
+                </tr>
+            </table>
         </div>
-    </div>
-    <div id="logBox">
-        <ul id="logList"></ul>
     </div>
     <script src="user_script.js"></script>
 </body>
