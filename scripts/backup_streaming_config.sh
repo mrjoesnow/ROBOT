@@ -68,7 +68,7 @@ else
 fi
 
 # Copy systemd services
-for file in /etc/systemd/system/ffmpeg-stream.service; do
+for file in /etc/systemd/system/ffmpeg-stream.service /etc/systemd/system/monitor-obs-stream.service; do
   if [ -f "${file}" ]; then
     cp -v "${file}" "/root/gitrobot/configs/systemd/" 2>>"${ERROR_LOG}" || log_error "Failed to copy service file ${file} to /root/gitrobot/configs/systemd/"
   else
@@ -77,7 +77,7 @@ for file in /etc/systemd/system/ffmpeg-stream.service; do
 done
 
 # Copy scripts
-for file in /usr/local/bin/backup_streaming_config.sh /usr/local/bin/install_pongrobot.sh /usr/local/bin/restore_pongrobot.sh /usr/local/bin/purge-large-logs.sh; do
+for file in /usr/local/bin/backup_streaming_config.sh /usr/local/bin/monitor-obs-stream.sh /usr/local/bin/install_pongrobot.sh /usr/local/bin/restore_pongrobot.sh /usr/local/bin/purge-large-logs.sh; do
   if [ -f "${file}" ]; then
     cp -v "${file}" "/root/gitrobot/scripts/" 2>>"${ERROR_LOG}" || log_error "Failed to copy script ${file} to /root/gitrobot/scripts/"
   else
@@ -94,7 +94,7 @@ fi
 
 # Copy FFmpeg and systemd service files to backup
 mkdir -p "${BACKUP_DIR}/systemd"
-for file in /etc/systemd/system/ffmpeg-stream.service; do
+for file in /etc/systemd/system/ffmpeg-stream.service /etc/systemd/system/monitor-obs-stream.service; do
   if [ -f "${file}" ]; then
     cp -v "${file}" "${BACKUP_DIR}/systemd/" 2>>"${ERROR_LOG}" || log_error "Failed to copy service file ${file}"
   else
@@ -123,9 +123,7 @@ done
 # Copy web files to backup, excluding hls folder
 mkdir -p "${BACKUP_DIR}/www/html"
 if [ -d /var/www/html ]; then
-  rsync -av --exclude 'hls' /var/www/html/ "${BACKUP_DIR “
-
-/www/html/" 2>>"${ERROR_LOG}" || log_error "Failed to copy web files from /var/www/html/"
+  rsync -av --exclude 'hls' /var/www/html/ "${BACKUP_DIR}/www/html/" 2>>"${ERROR_LOG}" || log_error "Failed to copy web files from /var/www/html/"
 else
   log_error "Web directory /var/www/html does not exist"
 fi
@@ -165,12 +163,18 @@ fi
 # Perform Git operations (commit and push)
 if [ -d /root/gitrobot/.git ]; then
   cd /root/gitrobot
+  # Get current branch
+  GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  if [ -z "${GIT_BRANCH}" ]; then
+    log_error "Failed to determine current Git branch"
+    GIT_BRANCH="main"
+  fi
   git add . 2>>"${ERROR_LOG}" || log_error "Failed to stage Git changes"
   git commit -m "Automated backup commit: ${TIMESTAMP}" 2>>"${ERROR_LOG}" || log_error "Failed to commit Git changes"
-  if git push origin main 2>>"${ERROR_LOG}"; then
-    echo "Git push successful to https://github.com/mrjoesnow/robot"
+  if git push origin "${GIT_BRANCH}" 2>>"${ERROR_LOG}"; then
+    echo "Git push successful to https://github.com/mrjoesnow/robot (branch: ${GIT_BRANCH})"
   else
-    log_error "Failed to push to Git repository"
+    log_error "Failed to push to Git repository (branch: ${GIT_BRANCH})"
   fi
   cd - >/dev/null
 else
@@ -189,16 +193,40 @@ Git Repository: https://github.com/mrjoesnow/robot
 
 Files Backed Up:
 - FFmpeg Service: /etc/systemd/system/ffmpeg-stream.service
+- OBS Monitor Service: /etc/systemd/system/monitor-obs-stream.service
 - Janus: All *.jcfg files in /opt/janus/etc/janus/
 - Nginx: /etc/nginx/sites-enabled/default, /etc/nginx/sites-available/default, /etc/nginx/nginx.conf
 - Web: Files in /var/www/html/ excluding hls folder (e.g., stream.html, index.html, js/stream.js, js/janus.js, js/adapter-latest.js, api/stream-key.json)
 - Backend: Files in /var/www/pongrobot-backend/ excluding node_modules (e.g., index.js, package.json, pongrobot.db)
-- Scripts: Selected files in /usr/local/bin/ (e.g., backup_streaming_config.sh, install_pongrobot.sh, restore_pongrobot.sh, purge-large-logs.sh)
+- Scripts: Files in /usr/local/bin/ (e.g., backup_streaming_config.sh, monitor-obs-stream.sh, install_pongrobot.sh, restore_pongrobot.sh, purge-large-logs.sh)
 - Git Repository: /root/gitrobot/ excluding .git folder
 - Git Credentials: /root/.git-credentials (contains PAT)
 
 Notes:
 - Ensure OBS is streaming to rtmp://127.0.0.1:1935/live with key 23672E6t.
 - Janus configuration uses HTTPS on port 8089, base_path /janus.
-- FFmpeg runs as a systemd service.
+- FFmpeg and OBS monitor run as systemd services.
 - Backend includes SQLite database at /var/www/pongrobot-backend/pongrobot.db.
+- Additional scripts (e.g., install_pongrobot.sh) included in backup.
+- Backup errors logged in ${ERROR_LOG}
+EOF
+
+# Compress the backup
+if tar -czf "${ARCHIVE_FILE}" -C "${BACKUP_DIR}" . 2>>"${ERROR_LOG}"; then
+  echo "Backup completed: ${ARCHIVE_FILE}"
+  ls -lh "${ARCHIVE_FILE}"
+else
+  log_error "Failed to create archive ${ARCHIVE_FILE}"
+  exit 1
+fi
+
+# Output any errors encountered
+if [ -s "${ERROR_LOG}" ]; then
+  echo "Errors encountered during backup, see ${ERROR_LOG}:"
+  cat "${ERROR_LOG}"
+else
+  echo "No errors encountered during backup"
+fi
+
+# Clean up temporary directory
+rm -rf "${BACKUP_DIR}"
