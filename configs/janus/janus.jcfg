@@ -1,0 +1,64 @@
+# General configuration for Pong Robot WebRTC streaming
+general: {
+    configs_folder = "/opt/janus/etc/janus"
+    plugins_folder = "/opt/janus/lib/janus/plugins"
+    transports_folder = "/opt/janus/lib/janus/transports"
+    events_folder = "/opt/janus/lib/janus/events"
+    loggers_folder = "/opt/janus/lib/janus/loggers"
+
+    log_to_stdout = true
+    log_to_file = "/opt/janus/log/janus.log"
+    debug_level = 4
+    debug_timestamps = true
+    debug_colors = true
+
+    session_timeout = 60
+    candidates_timeout = 45
+    server_name = "PongRobotRTC"
+    #http = false
+    #https = true
+    #secure_port = 8089
+}
+
+# Certificates: Use Let's Encrypt for WebRTC DTLS
+certificates: {
+    cert_pem = "/opt/janus/certs/fullchain.crt"
+    cert_key = "/opt/janus/certs/privkey.key"
+}
+
+# Media settings for WebRTC streaming
+media: {
+    no_media_timer = 2
+    twcc_period = 100
+    min_nack_queue = 200
+    nack_optimizations = true
+}
+
+# NAT settings for VPS environment
+nat: {
+    ice_lite = true
+    nice_debug = false
+    stun_server = "stun.l.google.com"
+    stun_port = 19302
+}
+
+# Plugins: Disable unused plugins
+plugins: {
+    disable = "libjanus_echotest.so,libjanus_recordplay.so,libjanus_sip.so,libjanus_nosip.so,libjanus_videocall.so,libjanus_textroom.so,libjanus_audiobridge.so,libjanus_videoroom.so,libjanus_voicemail.so"
+}
+
+# Transports: Disable pfunix
+transports: {
+    disable = "libjanus_pfunix.so"
+    http = true
+    websockets = true
+}
+
+# Loggers: Keep default
+loggers: {
+}
+
+# Events: Disable to avoid config errors
+events: {
+    broadcast = false
+}

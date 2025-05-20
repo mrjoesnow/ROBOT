@@ -1,0 +1,23 @@
+general: {
+    admin_key = "23672E6t"
+    rtp_port_range = "20000-40000"
+    #events = false
+}
+
+pong_stream: {
+	type = "rtp"
+	id = 1
+	description = "OBSRTPStream"
+	metadata = "metadata section"
+	audio = true
+	video = true
+	audioport = 5004
+	audiopt = 111
+	audiortpmap = "opus/48000/2"
+	videoport = 5006
+	videopt = 100
+	videortpmap = "h264/90000"
+	#fmtp = "profile-level-id=42e01f;packetization-mode=1"
+	fmtp = "profile-level-id=42001f;packetization-mode=1"
+	secret = "23672E6t"
+}
