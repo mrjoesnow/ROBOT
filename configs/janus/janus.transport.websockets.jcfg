@@ -1,0 +1,11 @@
+general: {
+    ws = true
+    ws_port = 8188
+    wss = true
+    secure_port = 8055
+    interface = "0.0.0.0"
+}
+certificates:{
+cert_pem = "/opt/janus/certs/fullchain.crt"
+cert_key = "/opt/janus/certs/privkey.key"
+}

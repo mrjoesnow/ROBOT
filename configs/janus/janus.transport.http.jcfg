@@ -1,0 +1,22 @@
+general: {
+    json = "indented"
+    base_path = "/janus"
+    http = false
+    https = true
+    secure_port = 8089
+    interface = "0.0.0.0"
+    cors = "https://pongrobot.com"
+    allow_cors = true
+    cors_headers = "Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers, Access-Control-Expose-Headers, Access-Control-Allow-Credentials, Vary, X-Content-Type-Options, Cache-Control"
+    cors_methods = "GET, POST, OPTIONS"
+    cors_origin = "https://pongrobot.com"
+    cors_credentials = true
+    vary_header = "Origin"
+    x_content_type_options = "nosniff"
+    cache_control = "no-cache, no-store, must-revalidate"
+    expires = false
+}
+certificates: {
+    cert_pem = "/opt/janus/certs/fullchain.crt"
+    cert_key = "/opt/janus/certs/privkey.key"
+}

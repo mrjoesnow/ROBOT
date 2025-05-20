@@ -1,0 +1,37 @@
+# Certificates
+*.crt
+*.key
+/opt/janus/certs/
+/etc/letsencrypt/
+
+# SSH host keys
+/etc/ssh/ssh_host_*
+
+# Logs
+*.log
+/var/log/
+
+# HLS media
+frontend/hls/
+hls/
+
+# Node.js
+node_modules/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Backup archives
+/root/streaming_backup_*.tar.gz
+backup_errors.log
+
+# Git credentials
+.git-credentials
+
+# Unwanted web files
+frontend/index.nginx-debian.html
+frontend/rtp_capture.pcap
+frontend/auth/
+frontend/.git/

@@ -1,0 +1,182 @@
+# HTTP server for pongrobot.com and www.pongrobot.com
+server {
+    listen 80;
+    listen [::]:80;
+    server_name pongrobot.com www.pongrobot.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+        try_files $uri $uri/ =404;
+    }
+
+    location = /auth {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+        fastcgi_index auth.php;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/auth/auth.php;
+        fastcgi_param REQUEST_URI $request_uri;
+        fastcgi_param QUERY_STRING $query_string;
+        fastcgi_param REQUEST_METHOD $request_method;
+    }
+
+    location / {
+	try_files $uri $uri/ /index.html;
+	add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss://pongrobot.com https://pongrobot.com; object-src 'none'; frame-ancestors 'self'; media-src 'self' blob:;";
+        return 301 https://pongrobot.com$request_uri;
+        access_log /var/log/nginx/pongrobot_access.log;
+        error_log /var/log/nginx/pongrobot_error.log;
+    }
+}
+
+# HTTPS server for pongrobot.com
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name pongrobot.com;
+
+    ssl_certificate /etc/letsencrypt/live/pongrobot.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pongrobot.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    server_tokens off;
+
+    root /var/www/html;
+    index index.html;
+
+location = /api/stream-key {
+    root /var/www/html;
+    try_files /api/stream-key.json =404;
+    add_header Content-Type "application/json";
+    add_header Access-Control-Allow-Origin "https://pongrobot.com" always;
+    add_header Access-Control-Allow-Methods "GET" always;
+    add_header Access-Control-Allow-Headers "Content-Type, Accept" always;
+    access_log /var/log/nginx/api_access.log;
+    error_log /var/log/nginx/api_error.log;
+}
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Content-Type "text/html; charset=utf-8";
+	add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm/hls.js@1.5.7 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss://pongrobot.com https://pongrobot.com; object-src 'none'; frame-ancestors 'self'; media-src 'self' blob:;";
+	add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Accept" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Cache-Control "no-cache" always;
+        add_header Vary "Origin" always;
+        error_log /var/log/nginx/html_error.log;
+        access_log /var/log/nginx/html_access.log;
+    }
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+        try_files $uri $uri/ =404;
+    }
+
+    location = /auth/auth.php {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+        fastcgi_index auth.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    location /hls/ {
+        root /var/www/html;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET" always;
+        types {
+            application/vnd.apple.mpegurl m3u8;
+            video/mp2t ts;
+        }
+        expires -1;
+        add_header Cache-Control no-cache;
+        add_header Last-Modified $sent_http_last_modified;
+        access_log /var/log/nginx/hls_access.log;
+        error_log /var/log/nginx/hls_error.log;
+    }
+
+location /ws {
+    proxy_pass http://81.150.27.243:8055;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 86400;
+    proxy_connect_timeout 5s;
+    proxy_send_timeout 5s;
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+    access_log /var/log/nginx/websocket.log proxy_log;
+    error_log /var/log/nginx/websocket_error.log warn;
+    proxy_intercept_errors on;
+    error_page 502 504 /websocket_error.html;
+}
+
+    location = /websocket_error.html {
+        internal;
+        root /var/www/html;
+        return 200 "WebSocket connection failed: Unable to reach backend server.";
+    }
+
+location /janus {
+    proxy_pass https://localhost:8089/janus;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_ssl_verify off;
+    add_header Content-Type "application/json" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Cache-Control "no-cache" always;
+    add_header Access-Control-Allow-Origin "https://pongrobot.com" always;
+    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Content-Type, Accept, Authorization, X-Requested-With" always;
+    add_header Access-Control-Allow-Credentials "true" always;
+    add_header Access-Control-Expose-Headers "Content-Length, Content-Range" always;
+    add_header Access-Control-Max-Age "86400" always;
+    add_header Vary "Origin" always;
+    error_log /var/log/nginx/janus_error.log;
+    access_log /var/log/nginx/janus_access.log;
+}
+
+    location /js/ {
+        alias /var/www/html/js/;
+        expires 1d;
+        access_log off;
+    }
+
+    location /css/ {
+        alias /var/www/html/css/;
+        expires 1d;
+        access_log off;
+    }
+
+    location = /favicon.ico {
+        root /var/www/html;
+        try_files /favicon.ico =404;
+        add_header Content-Type "image/x-icon" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Cache-Control "public, max-age=3600" always;
+        access_log off;
+    }
+}
+
+# Redirect www.pongrobot.com to pongrobot.com
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name www.pongrobot.com;
+
+    ssl_certificate /etc/letsencrypt/live/pongrobot.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pongrobot.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    server_tokens off;
+
+    return 301 https://pongrobot.com$request_uri;
+}
