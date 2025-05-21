@@ -4,7 +4,7 @@ After=network-online.target nginx.service
 Wants=network-online.target nginx.service
 
 [Service]
-ExecStart=/usr/bin/ffmpeg -re -fflags +igndts -i rtmp://127.0.0.1:1935/live/23672E6t -map 0:v? -c:v copy -bsf:v h264_mp4toannexb -payload_type 100 -f rtp rtp://127.0.0.1:5006 -map 0:a -c:a libopus -b:a 128k -ac 2 -ar 48000 -payload_type 111 -f rtp rtp://127.0.0.1:5004 -rtmp_live live -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 30 -reconnect_at_eof 1 -timeout 30000000 -loglevel warning -rtmp_buffer 10000 -avioflags direct -fflags +genpts
+ExecStart=/usr/bin/ffmpeg -re -fflags +igndts+genpts -i rtmp://127.0.0.1:1935/live/23672E6t -map 0:v? -c:v copy -bsf:v h264_mp4toannexb -pix_fmt yuv420p -g 15 -keyint_min 15 -payload_type 100 -f rtp rtp://127.0.0.1:5006?rtcpport=5007 -map 0:a -c:a libopus -b:a 128k -ac 2 -ar 48000 -payload_type 111 -f rtp rtp://127.0.0.1:5004?rtcpport=5005 -rtmp_live live -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -reconnect_at_eof 1 -timeout 5000000 -rtmp_buffer 1000 -avioflags direct -loglevel info -progress /var/log/ffmpeg-progress.log
 StandardOutput=append:/var/log/ffmpeg.log
 StandardError=append:/var/log/ffmpeg.log
 Restart=always

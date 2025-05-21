@@ -8,13 +8,14 @@ general: {
 
     log_to_stdout = true
     log_to_file = "/opt/janus/log/janus.log"
-    debug_level = 4
+    debug_level = 5
     debug_timestamps = true
     debug_colors = true
 
     session_timeout = 60
     candidates_timeout = 45
     server_name = "PongRobotRTC"
+    #nack_optimizations = yes
     #http = false
     #https = true
     #secure_port = 8089
@@ -32,6 +33,7 @@ media: {
     twcc_period = 100
     min_nack_queue = 200
     nack_optimizations = true
+    jitter_buffer = 20
 }
 
 # NAT settings for VPS environment

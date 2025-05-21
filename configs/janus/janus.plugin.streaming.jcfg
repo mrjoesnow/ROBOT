@@ -2,6 +2,7 @@ general: {
     admin_key = "23672E6t"
     rtp_port_range = "20000-40000"
     #events = false
+	debug_level = 2
 }
 
 pong_stream: {
