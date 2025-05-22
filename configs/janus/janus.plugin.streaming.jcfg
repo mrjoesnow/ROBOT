@@ -1,6 +1,4 @@
-general: {
-    admin_key = "23672E6t"
-    rtp_port_range = "20000-40000"
+general: { admin_key = "23672E6t" rtp_port_range = "20000-40000"
     #events = false
 	debug_level = 2
 }
@@ -21,4 +19,8 @@ pong_stream: {
 	#fmtp = "profile-level-id=42e01f;packetization-mode=1"
 	fmtp = "profile-level-id=42001f;packetization-mode=1"
 	secret = "23672E6t"
+	#bufferkf = true
+	#rtpqsize = 5000
+	#rtcp = true
+	#rtcpport = 5007
 }

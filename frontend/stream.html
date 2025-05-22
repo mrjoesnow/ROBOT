@@ -6,20 +6,13 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss://pongrobot.com https://pongrobot.com; object-src 'none'; media-src 'self' blob:;">
     <title>Pong Robot Stream</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/css/user_styles.css">
-    <style>
-        #videoStream {
-            width: 100pc;
-            height: 100pc;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/stream.css">
 </head>
 <body>
     <div class="container">
         <div class="stream-container">
             <div class="stream-box">
                 <video id="videoStream" controls autoplay muted playsinline></video>
-                <button class="back-button" onclick="window.location.href='/index.html'">Back to Preview</button>
                 <div class="x-buttons">
                     <button id="moveXForwardBig2" class="arrow-button big"><div class="arrow3" style="transform: rotate(270deg);">▶</div></button>
                     <button id="moveXForwardMedium2" class="arrow-button medium"><div class="arrow2" style="transform: rotate(270deg);">▶</div></button>
@@ -32,15 +25,15 @@
                     <button id="moveXBackwardBig2" class="arrow-button big"><div class="arrow3" style="transform: rotate(90deg);">▶</div></button>
                 </div>
                 <div class="y-buttons">
-                    <button id="moveYForwardBig" class="arrow-button big"><div class="arrow3" style="transform: rotate(270deg);">▶</div></button>
-                    <button id="moveYForwardMedium" class="arrow-button medium"><div class="arrow2" style="transform: rotate(270deg);">▶</div></button>
-                    <button id="moveYForwardSmall" class="arrow-button small"><div class="arrow1" style="transform: rotate(270deg);">▶</div></button>
+                    <button id="moveYBackwardBig" class="arrow-button big"><div class="arrow3" style="transform: rotate(-180deg);">▶</div></button>
+                    <button id="moveYBackwardMedium" class="arrow-button medium"><div class="arrow2" style="transform: rotate(-180deg);">▶</div></button>
+                    <button id="moveYBackwardSmall" class="arrow-button small"><div class="arrow1" style="transform: rotate(-180deg);">▶</div></button>
                     <div class="gap"></div>
-                    <button id="homeY" class="home-button" style="transform: rotate(270deg);">Home<br>Y: <span id="droYValue">0</span>°</button>
+                    <button id="homeY" class="home-button" style="transform: rotate(0deg);">Home<br>Y: <span id="droYValue">0</span>°</button>
                     <div class="gap"></div>
-                    <button id="moveYBackwardSmall" class="arrow-button small"><div class="arrow1" style="transform: rotate(90deg);">▶</div></button>
-                    <button id="moveYBackwardMedium" class="arrow-button medium"><div class="arrow2" style="transform: rotate(90deg);">▶</div></button>
-                    <button id="moveYBackwardBig" class="arrow-button big"><div class="arrow3" style="transform: rotate(90deg);">▶</div></button>
+                    <button id="moveYForwardSmall" class="arrow-button small"><div class="arrow1" style="transform: rotate(0deg);">▶</div></button>
+                    <button id="moveYForwardMedium" class="arrow-button medium"><div class="arrow2" style="transform: rotate(0deg);">▶</div></button>
+                    <button id="moveYForwardBig" class="arrow-button big"><div class="arrow3" style="transform: rotate(0deg);">▶</div></button>
                 </div>
                 <button id="throwBall" class="throw-button">
                     <span id="ballsThrownValue" class="balls-thrown-value">0</span>
@@ -52,20 +45,7 @@
                     <div class="value" id="powerLevelValue">0</div>
                 </div>
             </div>
-            <div class="stream-box secondary-stream">
-                <!-- Secondary stream placeholder, removed as per original -->
-            </div>
-        </div>
-        <div class="control-panel">
-            <table class="control-table">
-                <tr>
-                    <td class="log-column">
-                        <div id="logBox" class="scrollable-log">
-                            <ul id="logList"></ul>
-                        </div>
-                    </td>
-                </tr>
-            </table>
+            <ul id="logList" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></ul>
         </div>
     </div>
     <script src="/js/adapter-latest.js"></script>

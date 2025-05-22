@@ -17,6 +17,13 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
+    function addLog(message) {
+        const li = document.createElement('li');
+        li.textContent = message;
+        logList.appendChild(li);
+        logList.scrollTop = logList.scrollHeight;
+    }
+
     const stepSizesX = {
         big: 620,
         medium: 155,
@@ -34,17 +41,32 @@ document.addEventListener("DOMContentLoaded", function() {
         pan: { min: -1, max: 89 }
     };
 
-    function addLog(message) {
-        const li = document.createElement('li');
-        li.textContent = message;
-        logList.appendChild(li);
-        logList.scrollTop = logList.scrollHeight;
+    let playTimeout = null;
+    function playVideo() {
+        if (videoElement.paused && !playTimeout) {
+            console.log("Attempting to play video");
+            addLog("Attempting to play video");
+            playTimeout = setTimeout(() => {
+                videoElement.play().then(() => {
+                    console.log("Video playback started");
+                    addLog("Video playback started");
+                }).catch(e => {
+                    console.error("Video play error: ", e);
+                    addLog(`Video play error: ${e}`);
+                });
+                playTimeout = null;
+            }, 100);
+        } else {
+            console.log("Video already playing or play request pending");
+            addLog("Video already playing or play request pending");
+        }
     }
 
     function updateValues() {
         const tilt = stepsY * (1 / 52);
         const pan = stepsX * (1 / 31);
         console.log(`Updating values: tilt=${tilt}, pan=${pan}`);
+        addLog(`Updating values: tilt=${tilt}, pan=${pan}`);
 
         document.getElementById('homeX').innerHTML = `Home<br>X: ${Math.round(pan)}°`;
         document.getElementById('homeY').innerHTML = `Home<br>Y: ${Math.round(tilt)}°`;
@@ -90,6 +112,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function initializeWebSocket() {
         console.log('Attempting WebSocket connection to wss://pongrobot.com/ws');
+        addLog('Attempting WebSocket connection');
         socket = new WebSocket('wss://pongrobot.com/ws');
 
         socket.onopen = () => {
@@ -102,24 +125,40 @@ document.addEventListener("DOMContentLoaded", function() {
                 powerLevelSlider.value = powerLevel;
                 document.getElementById('powerLevelValue').textContent = powerLevel;
                 addLog(`Power level set to: ${powerLevel}`);
+            } else {
+                console.error('Power level slider not found');
+                addLog('Power level slider not found');
             }
-            document.getElementById('ballsThrownValue').textContent = ballsThrown;
-            addLog(`Balls thrown reset to: ${ballsThrown}`);
+            const ballsThrownElement = document.getElementById('ballsThrownValue');
+            if (ballsThrownElement) {
+                ballsThrownElement.textContent = ballsThrown;
+                addLog(`Balls thrown reset to: ${ballsThrown}`);
+            } else {
+                console.error('Balls thrown element not found');
+                addLog('Balls thrown element not found');
+            }
             droXValue = document.getElementById('droXValue');
             droYValue = document.getElementById('droYValue');
             if (droXValue) {
                 droXValue.textContent = '0';
                 addLog('droX initialized to 0');
+            } else {
+                console.error('droX element not found');
+                addLog('droX element not found');
             }
             if (droYValue) {
                 droYValue.textContent = '0';
                 addLog('droY initialized to 0');
+            } else {
+                console.error('droY element not found');
+                addLog('droY element not found');
             }
             updateValues();
         };
 
         socket.onmessage = (event) => {
             console.log('WebSocket message:', event.data);
+            addLog(`WebSocket message: ${event.data}`);
             try {
                 const data = JSON.parse(event.data);
                 addLog(`Received: ${event.data}`);
@@ -151,8 +190,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
                 if (data.ballsThrown !== undefined) {
                     ballsThrown = data.ballsThrown;
-                    document.getElementById('ballsThrownValue').textContent = data.ballsThrown;
-                    addLog(`Balls thrown updated: ${ballsThrown}`);
+                    const ballsThrownElement = document.getElementById('ballsThrownValue');
+                    if (ballsThrownElement) {
+                        ballsThrownElement.textContent = data.ballsThrown;
+                        addLog(`Balls thrown updated: ${ballsThrown}`);
+                    }
                 }
                 if (data.status === 'ready') {
                     addLog('Robot ready');
@@ -225,11 +267,19 @@ document.addEventListener("DOMContentLoaded", function() {
             socket.send(JSON.stringify(message));
             addLog(`Sent: ${JSON.stringify(message)}`);
             ballsThrown++;
-            document.getElementById('ballsThrownValue').textContent = ballsThrown;
+            const ballsThrownElement = document.getElementById('ballsThrownValue');
+            if (ballsThrownElement) {
+                ballsThrownElement.textContent = ballsThrown;
+                addLog(`Balls thrown: ${ballsThrown}`);
+            }
             const ballsThrownSpan = document.querySelector('#throwBall .balls-thrown-value');
             if (ballsThrownSpan) {
                 ballsThrownSpan.textContent = ballsThrown;
                 addLog(`Balls thrown: ${ballsThrown}`);
+            }
+            const ballsThrownCount = document.getElementById('ballsThrownCount');
+            if (ballsThrownCount) {
+                ballsThrownCount.textContent = ballsThrown;
             }
         } else {
             console.error('WebSocket not open for throwBall');
@@ -327,13 +377,62 @@ document.addEventListener("DOMContentLoaded", function() {
                                 Janus.attachMediaStream(videoElement, stream);
                                 console.log("Attached stream to video element");
                                 addLog("Attached stream to video element");
-                                videoElement.play().catch(e => {
-                                    console.error("Video play error: ", e);
-                                    addLog(`Video play error: ${e}`);
-                                });
-                                stream.getTracks().forEach(track => {
+
+                                const tracks = stream.getTracks();
+                                tracks.forEach(track => {
                                     console.log(`${track.kind} track: id=${track.id}, enabled=${track.enabled}, muted=${track.muted}, readyState=${track.readyState}`);
                                     addLog(`${track.kind} track: id=${track.id}, enabled=${track.enabled}, muted=${track.muted}, readyState=${track.readyState}`);
+                                    if (track.muted) {
+                                        console.warn(`${track.kind} track still muted after 2s, retrying playback`);
+                                        addLog(`${track.kind} track muted, retrying in 2s`);
+                                        setTimeout(() => {
+                                            if (track.muted) playVideo();
+                                        }, 2000);
+                                    }
+                                });
+
+                                const prompt = document.createElement('div');
+                                prompt.style.position = 'absolute';
+                                prompt.style.top = '50%';
+                                prompt.style.left = '50%';
+                                prompt.style.transform = 'translate(-50%, -50%)';
+                                prompt.style.background = 'rgba(0, 0, 0, 0.7)';
+                                prompt.style.color = 'white';
+                                prompt.style.padding = '10px';
+                                prompt.style.borderRadius = '5px';
+                                prompt.textContent = 'Click video to start playback';
+                                videoElement.parentElement.appendChild(prompt);
+                                videoElement.addEventListener('click', () => {
+                                    prompt.remove();
+                                    playVideo();
+                                }, { once: true });
+
+                                videoElement.addEventListener('loadedmetadata', function () {
+                                    const videoWidth = videoElement.videoWidth;
+                                    const videoHeight = videoElement.videoHeight;
+                                    const aspectRatio = videoWidth / videoHeight;
+
+                                    const streamBox = videoElement.parentElement;
+                                    streamBox.style.aspectRatio = `${videoWidth}/${videoHeight}`;
+                                    streamBox.style.width = '100%';
+                                    streamBox.style.maxWidth = `${videoWidth}px`;
+                                    videoElement.style.width = '100%';
+                                    videoElement.style.height = 'auto';
+
+                                    console.log(`Stream resolution: ${videoWidth}x${videoHeight}, Aspect ratio: ${aspectRatio}`);
+                                    addLog(`Stream resolution: ${videoWidth}x${videoHeight}`);
+                                }, { once: true });
+
+                                window.addEventListener('resize', function () {
+                                    const streamBox = videoElement.parentElement;
+                                    streamBox.style.width = '100%';
+                                    videoElement.style.width = '100%';
+                                    videoElement.style.height = 'auto';
+                                });
+
+                                playVideo();
+
+                                stream.getTracks().forEach(track => {
                                     track.onmute = () => {
                                         console.log(`${track.kind} track muted`);
                                         addLog(`${track.kind} track muted`);
@@ -348,10 +447,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                         if (videoElement.paused) {
                                             console.log("Retrying playback after unmute");
                                             addLog("Retrying playback after unmute");
-                                            videoElement.play().catch(e => {
-                                                console.error("Retry play error: ", e);
-                                                addLog(`Retry play error: ${e}`);
-                                            });
+                                            playVideo();
                                         }
                                     };
                                     track.onended = () => {
@@ -409,10 +505,6 @@ document.addEventListener("DOMContentLoaded", function() {
                             ontrack: function(event) {
                                 console.log("WebRTC ontrack event: ", event);
                                 addLog(`WebRTC ontrack event: ${JSON.stringify(event)}`);
-                                console.log("Track received: ", event.track);
-                                addLog(`Track received: ${event.track.kind}`);
-                                console.log("Streams: ", event.streams);
-                                addLog(`Streams: ${event.streams.length}`);
                             }
                         });
                     },
@@ -505,7 +597,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     });
                 } else {
                     console.error(`Button ${id} not found`);
-                    addLog(`Error: Button ${id} not found`);
+                    addLog(`Button ${id} not found`);
                 }
             });
 
@@ -520,7 +612,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             } else {
                 console.error('Power level slider not found');
-                addLog('Error: Power level slider not found');
+                addLog('Power level slider not found');
             }
         }
     });

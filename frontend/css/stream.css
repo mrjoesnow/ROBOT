@@ -1,3 +1,351 @@
-#startPlayback {
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2vw;
+}
+
+.stream-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 2vw;
+}
+
+.stream-box {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    aspect-ratio: 3 / 2;
+    border: none;
+    overflow: visible;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: min(1.6vw, 20px);
+    margin: min(0.8vw, 10px);
+    box-sizing: border-box;
+}
+
+#videoStream {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    background: black;
+    position: relative;
+    z-index: 1;
+}
+
+.x-buttons, .y-buttons {
+    position: absolute;
+    display: flex;
+    gap: min(0.8vw, 10px);
+    z-index: 3;
+}
+
+.x-buttons {
+    flex-direction: column;
+    top: 10%;
+    right: min(1vw, 12px);
+    transform: none;
+    margin-bottom: min(8.4vw, 100px);
+}
+
+.y-buttons {
+    flex-direction: row;
+    bottom: min(5%, 40px);
+    left: 50%;
+    transform: translateX(-50%) rotate(0deg);
+}
+
+.arrow-button {
+    background: rgb(43, 139, 194);
+    border: none;
+    cursor: pointer;
+    color: #b8d3e9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: min(4.8vw, 4.8vh, 60px);
+    height: min(4.8vw, 4.8vh, 60px);
+    border-radius: 10%;
+    transition: background 0.3s, color 0.3s;
+}
+
+.arrow-button:hover {
+    background: rgb(33, 119, 174);
+    color: #fff;
+}
+
+.arrow-button.small,
+.arrow-button.medium,
+.arrow-button.big {
+    width: min(4.8vw, 4.8vh, 60px);
+    height: min(4.8vw, 4.8vh, 60px);
+}
+
+.arrow1 {
+    font-size: min(1vw, 1vh, 12pt);
+}
+
+.arrow2 {
+    font-size: min(1.6vw, 1.6vh, 20pt);
+}
+
+.arrow3 {
+    font-size: min(2.4vw, 2.4vh, 30pt);
+}
+
+.throw-button {
+    position: absolute;
+    bottom: min(2vw, 2vh, 25px);
+    right: min(2vw, 2vh, 25px);
+    background: red;
+    border: none;
+    border-radius: 50%;
+    width: min(5vw, 5vh, 60px);
+    height: min(5vw, 5vh, 60px);
+    color: white;
+    font-size: min(1.6vw, 1.6vh, 20px);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s, color 0.3s, transform 0.2s;
+    z-index: 2;
+}
+
+.throw-button:hover {
+    background: darkred;
+    transform: scale(1.1);
+}
+
+.throw-button:active {
+    transform: scale(0.95);
+}
+
+.throw-button .balls-thrown-value {
+    font-size: min(1.6vw, 1.6vh, 20px);
+    margin-top: min(0.4vw, 0.4vh, 5px);
+}
+
+#ballsThrown {
     display: none;
+}
+
+.power-level-slider {
+    position: absolute;
+    bottom: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: min(80vw, 960px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+    margin-top: 15px;
+}
+
+.power-level-slider label {
+    margin-bottom: 10px;
+    font-size: min(1.3vw, 1.3vh, 16px);
+}
+
+.power-level-slider input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    margin-bottom: 10px;
+}
+
+.power-level-slider input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: min(0.8vw, 0.8vh, 10px);
+    background: #ddd;
+    border-radius: 5px;
+}
+
+.power-level-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: min(3.2vw, 3.2vh, 40px);
+    height: min(3.2vw, 3.2vh, 40px);
+    background: #28a745;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    top: min(-1.2vw, -1.2vh, -15px);
+    transition: background 0.3s;
+}
+
+.power-level-slider input[type="range"]::-webkit-slider-thumb:hover {
+    background: #218838;
+}
+
+.power-level-slider input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: min(0.8vw, 0.8vh, 10px);
+    background: #ddd;
+    border-radius: 5px;
+}
+
+.power-level-slider input[type="range"]::-moz-range-thumb {
+    width: min(3.2vw, 3.2vh, 40px);
+    height: min(3.2vw, 3.2vh, 40px);
+    background: #28a745;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.power-level-slider input[type="range"]::-moz-range-thumb:hover {
+    background: #218838;
+}
+
+.power-level-slider .value {
+    font-size: min(1.3vw, 1.3vh, 16px);
+    font-weight: bold;
+    color: #333;
+    background: #fff;
+    border: 2px solid #28a745;
+    border-radius: 50%;
+    padding: min(0.4vw, 0.4vh, 5px) min(0.8vw, 0.8vh, 10px);
+}
+
+.home-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: min(1vw, 1vh, 10px);
+    cursor: pointer;
+    border-radius: 5px;
+    width: min(4.8vw, 4.8vh, 60px);
+    height: min(4.8vw, 4.8vh, 60px);
+    font-size: min(1.1vw, 1.1vh, 14px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    transition: background 0.3s, color 0.3s;
+}
+
+.home-button:hover {
+    background-color: #218838;
+}
+
+.gap {
+    height: min(0.8vw, 0.8vh, 10px);
+}
+
+#logList {
+    display: none;
+}
+
+@media (max-width: 768px), (max-height: 770px) {
+    .container {
+        padding: min(1.6vw, 1.6vh, 10px);
+    }
+    .stream-container {
+        margin-bottom: min(1.6vw, 1.6vh, 10px);
+    }
+    .stream-box {
+        width: 100%;
+        max-width: none;
+        aspect-ratio: 3 / 2;
+        border: none;
+        padding: min(1.6vw, 1.6vh, 10px);
+        margin: min(0.8vw, 0.8vh, 5px);
+    }
+    #videoStream {
+        max-width: 100%;
+    }
+    .x-buttons, .y-buttons {
+        gap: min(1.2vw, 1.2vh, 8px);
+    }
+    .x-buttons {
+        right: min(1.6vw, 1.6vh, 8px);
+        top: 5%;
+        margin-bottom: calc(50px + 20 * (1 - min(2vw, 2vh) / 100));
+    }
+    .y-buttons {
+        bottom: min(6%, 24px);
+    }
+    .arrow-button, .home-button {
+        width: min(8vw, 8vh, 40px);
+        height: min(8vw, 8vh, 40px);
+        font-size: min(2vw, 2vh, 10px);
+        padding: min(1.2vw, 1.2vh, 6px);
+    }
+    .arrow1 {
+        font-size: min(2vw, 2vh, 8pt);
+    }
+    .arrow2 {
+        font-size: min(3.2vw, 3.2vh, 12pt);
+    }
+    .arrow3 {
+        font-size: min(4.8vw, 4.8vh, 18pt);
+    }
+    .throw-button {
+        bottom: min(2vw, 2vh, 21px);
+        right: calc(min(2vw, 2vh, 21px) + min(8vw, 8vh, 40px));
+        width: min(8vw, 8vh, 40px);
+        height: min(8vw, 8vh, 40px);
+        font-size: min(2vw, 2vh, 10px);
+    }
+    .throw-button .balls-thrown-value {
+        font-size: min(2vw, 2vh, 10px);
+        margin-top: min(0.6vw, 0.6vh, 3px);
+    }
+    #ballsThrown {
+        display: none;
+    }
+    .power-level-slider {
+        width: 80%;
+        max-width: min(90vw, 720px);
+        bottom: -60px;
+        margin-top: min(2vw, 2vh, 10px);
+    }
+    .power-level-slider label {
+        font-size: min(3.2vw, 3.2vh, 14px);
+    }
+    .power-level-slider input[type="range"]::-webkit-slider-runnable-track {
+        height: min(1.6vw, 1.6vh, 8px);
+    }
+    .power-level-slider input[type="range"]::-webkit-slider-thumb {
+        width: min(8vw, 8vh, 32px);
+        height: min(8vw, 8vh, 32px);
+        top: min(-2.4vw, -2.4vh, -12px);
+    }
+    .power-level-slider input[type="range"]::-moz-range-track {
+        height: min(1.6vw, 1.6vh, 8px);
+    }
+    .power-level-slider input[type="range"]::-moz-range-thumb {
+        width: min(8vw, 8vh, 32px);
+        height: min(8vw, 8vh, 32px);
+    }
+    .power-level-slider .value {
+        font-size: min(3.2vw, 3.2vh, 14px);
+        padding: min(0.8vw, 0.8vh, 4px) min(1.6vw, 1.6vh, 8px);
+    }
+    .gap {
+        height: min(1.2vw, 1.2vh, 5px);
+    }
+    #logList {
+        display: none;
+    }
 }
