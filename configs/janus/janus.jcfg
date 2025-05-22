@@ -14,7 +14,7 @@ general: {
 	#log_to_stdout = false					# Whether the Janus output should be written
 											# to stdout or not (default=true)
 	#log_to_file = "/path/to/janus.log"		# Whether to use a log file or not
-	debug_level = 4							# Debug/logging level, valid values are 0-7
+	debug_level = 3							# Debug/logging level, valid values are 0-7
 	#debug_timestamps = true				# Whether to show a timestamp for each log line
 	#debug_colors = false					# Whether colors should be disabled in the log
 	#debug_locks = true						# Whether to enable debugging of locks (very verbose!)
@@ -56,7 +56,7 @@ general: {
 	#interface = "1.2.3.4"			# Interface to use (will be used in SDP)
 	#server_name = "MyJanusInstance"# Public name of this Janus instance
 									# as it will appear in an info request
-	#session_timeout = 60			# How long (in seconds) we should wait before
+	#session_timeout = 120			# How long (in seconds) we should wait before
 									# deciding a Janus session has timed out. A
 									# session times out when no request is received
 									# for session_timeout seconds (default=60s).
@@ -88,7 +88,7 @@ general: {
 									# external scripts), then uncomment and set the
 									# recordings_tmp_ext property to the extension
 									# to add to the base (e.g., tmp --> .mjr.tmp).
-	#event_loops = 8				# By default, Janus handles each have their own
+	event_loops = 2				# By default, Janus handles each have their own
 									# event loop and related thread for all the media
 									# routing and management. If for some reason you'd
 									# rather limit the number of loop/threads, and
@@ -117,7 +117,7 @@ general: {
 									# only if allow_loop_indication is set to true;
 									# it's set to false by default to avoid abuses.
 									# Don't change if you don't know what you're doing!
-	#task_pool_size = 100			# By default, while the Janus core is single thread
+	task_pool_size = 20			# By default, while the Janus core is single thread
 									# when it comes to processing incoming messages, it
 									# also uses a task pool with an indefinite amount
 									# of helper threads spawned on demand to handle
@@ -226,12 +226,12 @@ certificates: {
 media: {
 	#ipv6 = true
 	#ipv6_linklocal = true
-	#min_nack_queue = 500
-	#rtp_port_range = "20000-40000"
+	min_nack_queue = 300
+	rtp_port_range = "20000-40000"
 	#dtls_mtu = 1200
 	#no_media_timer = 1
-	#slowlink_threshold = 4
-	#twcc_period = 100
+	slowlink_threshold = 4
+	twcc_period = 100
 	#dtls_timeout = 500
 
 	# Janus can do some optimizations on the NACK queue, specifically when
@@ -283,13 +283,13 @@ media: {
 # if you do not enable ICE Lite as well), choose which interfaces should
 # be used for gathering candidates.
 nat: {
-	#stun_server = "stun.voip.eutelia.it"
-	#stun_port = 3478
+	stun_server = "stun.l.google.com"
+	stun_port = 19302
 	#nice_debug = "nice_debug option is NOT SUPPORTED ANYMORE! Please set NICE_DEBUG and G_MESSAGES_DEBUG env vars when starting Janus"
 	#full_trickle = true
 	#ice_nomination = "regular"
-	#ice_consent_freshness = true
-	#ice_keepalive_conncheck = true
+	ice_consent_freshness = true
+	ice_keepalive_conncheck = true
 	#ice_lite = true
 	#ice_tcp = true
 
@@ -412,7 +412,7 @@ nat: {
 # names to identify the plugins to disable. By default all available
 # plugins are enabled and loaded at startup.
 plugins: {
-	#disable = "libjanus_echotest.so,libjanus_recordplay.so"
+    disable = "libjanus_echotest.so,libjanus_videoroom.so,libjanus_recordplay.so"
 }
 
 # You can choose which of the available transports should be enabled or
@@ -421,7 +421,7 @@ plugins: {
 # to identify the transports to disable. By default all available
 # transports are enabled and loaded at startup.
 transports: {
-	#disable = "libjanus_rabbitmq.so"
+    disable = "libjanus_websockets.so,libjanus_rabbitmq.so"
 }
 
 # As a core feature, Janus can log either on the standard output, or to
@@ -454,8 +454,8 @@ loggers: {
 # events): if you'd rather receive a single containing all media stats in a
 # single array, set 'combine_media_stats' to true.
 events: {
-	#broadcast = true
+	broadcast = true
 	#combine_media_stats = true
 	#disable = "libjanus_sampleevh.so"
-	#stats_period = 5
+	stats_period = 5
 }

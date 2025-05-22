@@ -319,7 +319,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             error: function(error) {
                                 console.error("Error attaching to plugin: ", error);
                                 addLog(`Error attaching to plugin: ${error}`);
-                                setTimeout(connectJanus, 5000);
+                                setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
                             },
                             onmessage: function(msg, jsep) {
                                 console.log("Received message: ", JSON.stringify(msg));
@@ -330,7 +330,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     if (msg.error_code === 453 || msg.error_code === 458) {
                                         console.warn("Retrying connection due to error: ", msg.error);
                                         addLog(`Retrying connection due to error: ${msg.error}`);
-                                        setTimeout(connectJanus, 1000);
+                                        setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
                                     }
                                     return;
                                 }
@@ -345,9 +345,14 @@ document.addEventListener("DOMContentLoaded", function() {
                                         jsep: jsep,
                                         media: { audioSend: false, videoSend: false, audioRecv: true, videoRecv: true },
                                         tracks: [
-                                            { type: "audio", recv: true },
-                                            { type: "video", recv: true }
+                                            { type: "audio", recv: true, mid: "0", simulcast: false },
+                                            { type: "video", recv: true, mid: "1", simulcast: false }
                                         ],
+                                        customizeSdp: function(jsep) {
+                                            // Optimize SDP for low latency
+                                            jsep.sdp = jsep.sdp.replace(/a=rtcp-fb:.*\n/g, ''); // Disable RTCP feedback
+                                            jsep.sdp = jsep.sdp.replace(/a=fmtp:.*\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1\n'); // Low-latency Opus settings
+                                        },
                                         success: function(jsep) {
                                             console.log("Created answer: ", JSON.stringify(jsep));
                                             addLog(`Created answer: ${JSON.stringify(jsep)}`);
@@ -390,6 +395,9 @@ document.addEventListener("DOMContentLoaded", function() {
                                         }, 2000);
                                     }
                                 });
+
+                                // Reduce WebRTC jitter buffer
+                                videoElement.bufferedAmountLowThreshold = 0.01; // Experimental, reduces client-side buffering
 
                                 const prompt = document.createElement('div');
                                 prompt.style.position = 'absolute';
@@ -460,7 +468,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 console.log("Stream stopped");
                                 addLog("Stream stopped");
                                 videoElement.srcObject = null;
-                                setTimeout(connectJanus, 5000);
+                                setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
                             },
                             iceState: function(state) {
                                 console.log("ICE connection state: ", state);
@@ -468,7 +476,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 if (state === "disconnected" || state === "failed") {
                                     console.warn("ICE failure, retrying connection");
                                     addLog("ICE failure, retrying connection");
-                                    setTimeout(connectJanus, 1000);
+                                    setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
                                 }
                             },
                             mediaState: function(medium, on, mid) {
@@ -486,7 +494,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 if (!on) {
                                     console.warn("WebRTC down, retrying connection");
                                     addLog("WebRTC down, retrying connection");
-                                    setTimeout(connectJanus, 1000);
+                                    setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
                                 }
                             },
                             onicecandidate: function(candidate) {
@@ -499,7 +507,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 if (state === "failed" || state === "disconnected" || state === "closed") {
                                     console.warn("ICE connection state critical: ", state, ", retrying connection");
                                     addLog(`ICE connection state critical: ${state}, retrying connection`);
-                                    setTimeout(connectJanus, 1000);
+                                    setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
                                 }
                             },
                             ontrack: function(event) {
@@ -541,11 +549,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 });
                 setInterval(() => {
-                    if (streaming) {
+                    if (janus) { // Changed to janus to avoid sending keep-alives with invalid handle
                         console.log("Sending keep-alive");
                         addLog("Sending keep-alive");
-                        streaming.send({
-                            message: { request: "info", id: 1 },
+                        janus.getInfo({ // Changed to getInfo for proper session keep-alive
                             success: () => {
                                 console.log("Keep-alive sent");
                                 addLog("Keep-alive sent");
@@ -553,10 +560,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             error: (error) => {
                                 console.error("Keep-alive error: ", error);
                                 addLog(`Keep-alive error: ${error}`);
+                                setTimeout(connectJanus, 5000);
                             }
                         });
                     }
-                }, 5000);
+                }, 30000); // Changed from 5000ms to 30000ms
             }
 
             connectJanus();

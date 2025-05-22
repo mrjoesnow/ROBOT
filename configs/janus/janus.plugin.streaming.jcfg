@@ -1,26 +1,26 @@
-general: { admin_key = "23672E6t" rtp_port_range = "20000-40000"
-    #events = false
-	debug_level = 2
+general: {
+    admin_key = "23672E6t"
+    rtp_port_range = "20000-40000"
+    debug_level = 2
 }
-
 pong_stream: {
-	type = "rtp"
-	id = 1
-	description = "OBSRTPStream"
-	metadata = "metadata section"
-	audio = true
-	video = true
-	audioport = 5004
-	audiopt = 111
-	audiortpmap = "opus/48000/2"
-	videoport = 5006
-	videopt = 100
-	videortpmap = "h264/90000"
-	#fmtp = "profile-level-id=42e01f;packetization-mode=1"
-	fmtp = "profile-level-id=42001f;packetization-mode=1"
-	secret = "23672E6t"
-	#bufferkf = true
-	#rtpqsize = 5000
-	#rtcp = true
-	#rtcpport = 5007
+    type = "rtp"
+    id = 1
+    description = "OBSRTPStream"
+    metadata = "metadata section"
+    audio = true
+    video = true
+    audioport = 5004
+    audiopt = 111
+    audiortpmap = "opus/48000/2"
+    audioportrtcp = 5005  # Matches FFMPEG
+    videoport = 5006
+    videopt = 100
+    videortpmap = "h264/90000"
+    fmtp = "profile-level-id=4d001f;packetization-mode=1"
+    videoportrtcp = 5007  # Matches FFMPEG
+    secret = "23672E6t"
+    bufferkf = true
+    bufferms = 50  # Increased to reduce jitter
+    rtcp = true
 }

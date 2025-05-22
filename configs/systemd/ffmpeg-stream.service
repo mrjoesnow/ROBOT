@@ -4,18 +4,21 @@ After=network-online.target nginx.service
 Wants=network-online.target nginx.service
 
 [Service]
-ExecStart=/usr/bin/ffmpeg -re -fflags +igndts+genpts -r 30 -i rtmp://127.0.0.1:1935/live/23672E6t -map 0:v? -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2000k -maxrate 2000k -bufsize 4000k -pix_fmt yuv420p -g 15 -keyint_min 15 -payload_type 100 -f rtp rtp://127.0.0.1:5006?rtcpport=5007 -map 0:a -c:a libopus -b:a 128k -ac 2 -ar 48000 -payload_type 111 -f rtp rtp://127.0.0.1:5004?rtcpport=5005 -rtmp_live live -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -reconnect_at_eof 1 -timeout 5000000 -rtmp_buffer 1000 -avioflags direct -loglevel info -progress /var/log/ffmpeg-progress.log
+ExecStart=/usr/bin/ffmpeg -re -fflags +igndts+genpts+discardcorrupt+nobuffer -fix_sub_duration -i rtmp://127.0.0.1:1935/live/23672E6t \
+  -map 0:v? -c:v copy -payload_type 100 -f rtp rtp://127.0.0.1:5006?rtcpport=5007&pkt_size=1200 \
+  -map 0:a -c:a libopus -b:a 64k -ac 2 -ar 48000 -payload_type 111 -f rtp rtp://127.0.0.1:5004?rtcpport=5005&pkt_size=1200 \
+  -rtmp_live live -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -reconnect_at_eof 1 -timeout 5000000 \
+  -rtmp_buffer 100 -avioflags direct -flags low_delay -probesize 32 -analyzeduration 0 -loglevel verbose \
+  -progress /var/log/ffmpeg-progress.log -report
 StandardOutput=append:/var/log/ffmpeg.log
 StandardError=append:/var/log/ffmpeg.log
 Restart=always
-RestartSec=10
+RestartSec=5
 StartLimitIntervalSec=60
 StartLimitBurst=5
-User=nobody
-Group=nogroup
-TimeoutStopSec=10
 User=root
 Group=root
+TimeoutStopSec=10
 
 [Install]
 WantedBy=multi-user.target
