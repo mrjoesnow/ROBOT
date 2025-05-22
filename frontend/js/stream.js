@@ -4,9 +4,11 @@ document.addEventListener("DOMContentLoaded", function() {
     let socket;
     let stepsX = 0;
     let stepsY = 0;
-    let powerLevel = 2500;
+    let powerLevel = 648; // User-facing default (maps to ~2500 in server range)
     let ballsThrown = 0;
     let previousData = {};
+    let userSetPowerLevel = false; // Flag to track user-set power level
+    let isThrowBallEnabled = true; // Flag to track throwBall button state
     const videoElement = document.getElementById("videoStream");
     const logList = document.getElementById('logList');
     let droXValue = document.getElementById('droXValue');
@@ -40,6 +42,17 @@ document.addEventListener("DOMContentLoaded", function() {
         tilt: { min: -45, max: 45 },
         pan: { min: -1, max: 89 }
     };
+
+    // Power level scaling functions
+    function userToServerPowerLevel(userValue) {
+        // Map 0–1000 to 1000–4700
+        return 1000 + (userValue / 1000) * (4700 - 1000);
+    }
+
+    function serverToUserPowerLevel(serverValue) {
+        // Map 1000–4700 to 0–1000
+        return ((serverValue - 1000) / (4700 - 1000)) * 1000;
+    }
 
     let playTimeout = null;
     function playVideo() {
@@ -118,13 +131,20 @@ document.addEventListener("DOMContentLoaded", function() {
         socket.onopen = () => {
             console.log('WebSocket opened');
             addLog('WebSocket connected');
-            powerLevel = 2500;
+            powerLevel = 648; // User-facing default (maps to ~2500 server value)
             ballsThrown = 0;
+            userSetPowerLevel = false; // Reset flag on connection
+            isThrowBallEnabled = true; // Ensure throwBall button is enabled
+            const throwBallButton = document.getElementById('throwBall');
+            if (throwBallButton) {
+                throwBallButton.disabled = false;
+                throwBallButton.style.backgroundColor = 'red'; // Match CSS .throw-button
+            }
             const powerLevelSlider = document.getElementById('powerLevelSlider');
             if (powerLevelSlider) {
                 powerLevelSlider.value = powerLevel;
-                document.getElementById('powerLevelValue').textContent = powerLevel;
-                addLog(`Power level set to: ${powerLevel}`);
+                document.getElementById('powerLevelValue').textContent = Math.round(powerLevel);
+                addLog(`Power level set to: ${Math.round(powerLevel)} (user range)`);
             } else {
                 console.error('Power level slider not found');
                 addLog('Power level slider not found');
@@ -180,12 +200,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 }
                 if (data.powerLevel !== undefined) {
-                    powerLevel = data.powerLevel;
-                    const powerLevelSlider = document.getElementById('powerLevelSlider');
-                    if (powerLevelSlider) {
-                        powerLevelSlider.value = powerLevel;
-                        document.getElementById('powerLevelValue').textContent = powerLevel;
-                        addLog(`Power level updated: ${powerLevel}`);
+                    // Only update slider if user hasn't manually set the power level
+                    if (!userSetPowerLevel) {
+                        powerLevel = serverToUserPowerLevel(data.powerLevel);
+                        const powerLevelSlider = document.getElementById('powerLevelSlider');
+                        if (powerLevelSlider) {
+                            powerLevelSlider.value = powerLevel;
+                            document.getElementById('powerLevelValue').textContent = Math.round(powerLevel);
+                            addLog(`Power level updated from server: ${Math.round(powerLevel)} (user range, server: ${data.powerLevel})`);
+                        }
+                    } else {
+                        // Log server power level without updating slider
+                        addLog(`Server power level: ${data.powerLevel} (ignored, user-set value: ${Math.round(powerLevel)})`);
                     }
                 }
                 if (data.ballsThrown !== undefined) {
@@ -254,12 +280,19 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function throwBall() {
+        if (!isThrowBallEnabled) {
+            console.log('Throw ball button is disabled');
+            addLog('Throw ball button is disabled');
+            return;
+        }
+
         const powerLevelSlider = document.getElementById('powerLevelSlider');
-        const powerLevelValue = parseInt(powerLevelSlider.value, 10);
+        const userPowerLevelValue = parseInt(powerLevelSlider.value, 10);
+        const serverPowerLevelValue = userToServerPowerLevel(userPowerLevelValue); // Scale to server range
         const ballLoadingSteps = 4200;
         const message = {
             THROW: true,
-            POWER_LEVEL: powerLevelValue,
+            POWER_LEVEL: serverPowerLevelValue,
             BALL_LOADING_STEPS: ballLoadingSteps,
             SPEED_Z: 280
         };
@@ -281,6 +314,23 @@ document.addEventListener("DOMContentLoaded", function() {
             if (ballsThrownCount) {
                 ballsThrownCount.textContent = ballsThrown;
             }
+
+            // Disable the throwBall button for 5 seconds
+            isThrowBallEnabled = false;
+            const throwBallButton = document.getElementById('throwBall');
+            if (throwBallButton) {
+                throwBallButton.disabled = true;
+                throwBallButton.style.backgroundColor = 'grey'; // Grey during delay
+                addLog('Throw ball button disabled for 5 seconds');
+            }
+            setTimeout(() => {
+                isThrowBallEnabled = true;
+                if (throwBallButton) {
+                    throwBallButton.disabled = false;
+                    throwBallButton.style.backgroundColor = 'red'; // Restore red when enabled
+                    addLog('Throw ball button re-enabled');
+                }
+            }, 5000);
         } else {
             console.error('WebSocket not open for throwBall');
             addLog('WebSocket not connected');
@@ -319,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             error: function(error) {
                                 console.error("Error attaching to plugin: ", error);
                                 addLog(`Error attaching to plugin: ${error}`);
-                                setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
+                                setTimeout(connectJanus, 5000);
                             },
                             onmessage: function(msg, jsep) {
                                 console.log("Received message: ", JSON.stringify(msg));
@@ -330,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     if (msg.error_code === 453 || msg.error_code === 458) {
                                         console.warn("Retrying connection due to error: ", msg.error);
                                         addLog(`Retrying connection due to error: ${msg.error}`);
-                                        setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
+                                        setTimeout(connectJanus, 5000);
                                     }
                                     return;
                                 }
@@ -349,9 +399,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                             { type: "video", recv: true, mid: "1", simulcast: false }
                                         ],
                                         customizeSdp: function(jsep) {
-                                            // Optimize SDP for low latency
-                                            jsep.sdp = jsep.sdp.replace(/a=rtcp-fb:.*\n/g, ''); // Disable RTCP feedback
-                                            jsep.sdp = jsep.sdp.replace(/a=fmtp:.*\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1\n'); // Low-latency Opus settings
+                                            jsep.sdp = jsep.sdp.replace(/a=rtcp-fb:.*\n/g, '');
+                                            jsep.sdp = jsep.sdp.replace(/a=fmtp:.*\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1\n');
                                         },
                                         success: function(jsep) {
                                             console.log("Created answer: ", JSON.stringify(jsep));
@@ -396,8 +445,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     }
                                 });
 
-                                // Reduce WebRTC jitter buffer
-                                videoElement.bufferedAmountLowThreshold = 0.01; // Experimental, reduces client-side buffering
+                                videoElement.bufferedAmountLowThreshold = 0.01;
 
                                 const prompt = document.createElement('div');
                                 prompt.style.position = 'absolute';
@@ -468,7 +516,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 console.log("Stream stopped");
                                 addLog("Stream stopped");
                                 videoElement.srcObject = null;
-                                setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
+                                setTimeout(connectJanus, 5000);
                             },
                             iceState: function(state) {
                                 console.log("ICE connection state: ", state);
@@ -476,7 +524,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 if (state === "disconnected" || state === "failed") {
                                     console.warn("ICE failure, retrying connection");
                                     addLog("ICE failure, retrying connection");
-                                    setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
+                                    setTimeout(connectJanus, 5000);
                                 }
                             },
                             mediaState: function(medium, on, mid) {
@@ -494,7 +542,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 if (!on) {
                                     console.warn("WebRTC down, retrying connection");
                                     addLog("WebRTC down, retrying connection");
-                                    setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
+                                    setTimeout(connectJanus, 5000);
                                 }
                             },
                             onicecandidate: function(candidate) {
@@ -507,7 +555,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 if (state === "failed" || state === "disconnected" || state === "closed") {
                                     console.warn("ICE connection state critical: ", state, ", retrying connection");
                                     addLog(`ICE connection state critical: ${state}, retrying connection`);
-                                    setTimeout(connectJanus, 5000); // Changed from 1000ms to 5000ms
+                                    setTimeout(connectJanus, 5000);
                                 }
                             },
                             ontrack: function(event) {
@@ -549,10 +597,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 });
                 setInterval(() => {
-                    if (janus) { // Changed to janus to avoid sending keep-alives with invalid handle
+                    if (janus) {
                         console.log("Sending keep-alive");
                         addLog("Sending keep-alive");
-                        janus.getInfo({ // Changed to getInfo for proper session keep-alive
+                        janus.getInfo({
                             success: () => {
                                 console.log("Keep-alive sent");
                                 addLog("Keep-alive sent");
@@ -564,7 +612,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             }
                         });
                     }
-                }, 30000); // Changed from 5000ms to 30000ms
+                }, 30000);
             }
 
             connectJanus();
@@ -615,8 +663,21 @@ document.addEventListener("DOMContentLoaded", function() {
                 addLog('Attaching listener to powerLevelSlider');
                 powerLevelSlider.addEventListener('input', () => {
                     powerLevel = parseInt(powerLevelSlider.value);
-                    document.getElementById('powerLevelValue').textContent = powerLevel;
-                    addLog(`Power level set to: ${powerLevel}`);
+                    userSetPowerLevel = true; // Set flag to indicate user adjustment
+                    document.getElementById('powerLevelValue').textContent = Math.round(powerLevel);
+                    addLog(`Power level set to: ${Math.round(powerLevel)} (user range)`);
+                    // Send scaled power level to server
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        const serverPowerLevel = userToServerPowerLevel(powerLevel);
+                        const message = {
+                            POWER_LEVEL: serverPowerLevel
+                        };
+                        socket.send(JSON.stringify(message));
+                        addLog(`Sent: ${JSON.stringify(message)} (server range)`);
+                    } else {
+                        console.error('WebSocket not open for power level update');
+                        addLog('WebSocket not connected');
+                    }
                 });
             } else {
                 console.error('Power level slider not found');
