@@ -445,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     }
                                 });
 
-                                videoElement.bufferedAmountLowThreshold = 0.01;
+                                videoElement.bufferedAmountLowThreshold = 0.002;
 
                                 const prompt = document.createElement('div');
                                 prompt.style.position = 'absolute';
